@@ -3,6 +3,15 @@
  * This file handles generating HTML forms for each app's settings
  */
 
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 const SettingsForms = {
     // Generate Sonarr settings form - Updated to use direct app settings without nesting
     generateSonarrForm: function(container, settings = {}) {
@@ -13,12 +22,12 @@ const SettingsForms = {
                 <h3>Sonarr Connection</h3>
                 <div class="setting-item">
                     <label for="sonarr_api_url">URL:</label>
-                    <input type="text" id="sonarr_api_url" value="${settings.api_url || ''}">
+                    <input type="text" id="sonarr_api_url" value="${escapeHtml(settings.api_url || '')}">
                     <p class="setting-help">Base URL for Sonarr (e.g., http://localhost:8989)</p>
                 </div>
                 <div class="setting-item">
                     <label for="sonarr_api_key">API Key:</label>
-                    <input type="text" id="sonarr_api_key" value="${settings.api_key || ''}">
+                    <input type="text" id="sonarr_api_key" value="${escapeHtml(settings.api_key || '')}">
                     <p class="setting-help">API key for Sonarr</p>
                 </div>
                 <!-- Removed the connection status indicator -->
@@ -140,12 +149,12 @@ const SettingsForms = {
                 <h3>Radarr Connection</h3>
                 <div class="setting-item">
                     <label for="radarr_api_url">URL:</label>
-                    <input type="text" id="radarr_api_url" value="${settings.api_url || ''}">
+                    <input type="text" id="radarr_api_url" value="${escapeHtml(settings.api_url || '')}">
                     <p class="setting-help">Base URL for Radarr (e.g., http://localhost:7878)</p>
                 </div>
                 <div class="setting-item">
                     <label for="radarr_api_key">API Key:</label>
-                    <input type="text" id="radarr_api_key" value="${settings.api_key || ''}">
+                    <input type="text" id="radarr_api_key" value="${escapeHtml(settings.api_key || '')}">
                     <p class="setting-help">API key for Radarr</p>
                 </div>
                 <!-- Removed the connection status indicator -->
@@ -267,12 +276,12 @@ const SettingsForms = {
                 <h3>Lidarr Connection</h3>
                 <div class="setting-item">
                     <label for="lidarr_api_url">URL:</label>
-                    <input type="text" id="lidarr_api_url" value="${settings.api_url || ''}">
+                    <input type="text" id="lidarr_api_url" value="${escapeHtml(settings.api_url || '')}">
                     <p class="setting-help">Base URL for Lidarr (e.g., http://localhost:8686)</p>
                 </div>
                 <div class="setting-item">
                     <label for="lidarr_api_key">API Key:</label>
-                    <input type="text" id="lidarr_api_key" value="${settings.api_key || ''}">
+                    <input type="text" id="lidarr_api_key" value="${escapeHtml(settings.api_key || '')}">
                     <p class="setting-help">API key for Lidarr</p>
                 </div>
                 <!-- Removed the connection status indicator -->
@@ -403,12 +412,12 @@ const SettingsForms = {
                 <h3>Readarr Connection</h3>
                 <div class="setting-item">
                     <label for="readarr_api_url">URL:</label>
-                    <input type="text" id="readarr_api_url" value="${settings.api_url || ''}">
+                    <input type="text" id="readarr_api_url" value="${escapeHtml(settings.api_url || '')}">
                     <p class="setting-help">Base URL for Readarr (e.g., http://localhost:8787)</p>
                 </div>
                 <div class="setting-item">
                     <label for="readarr_api_key">API Key:</label>
-                    <input type="text" id="readarr_api_key" value="${settings.api_key || ''}">
+                    <input type="text" id="readarr_api_key" value="${escapeHtml(settings.api_key || '')}">
                     <p class="setting-help">API key for Readarr</p>
                 </div>
                 <!-- Removed the connection status indicator -->
@@ -528,12 +537,12 @@ const SettingsForms = {
                 <h3>Whisparr Connection</h3>
                 <div class="setting-item">
                     <label for="whisparr_api_url">URL:</label>
-                    <input type="text" id="whisparr_api_url" value="${settings.api_url || ''}">
+                    <input type="text" id="whisparr_api_url" value="${escapeHtml(settings.api_url || '')}">
                     <p class="setting-help">Base URL for Whisparr (e.g., http://localhost:6969)</p>
                 </div>
                 <div class="setting-item">
                     <label for="whisparr_api_key">API Key:</label>
-                    <input type="text" id="whisparr_api_key" value="${settings.api_key || ''}">
+                    <input type="text" id="whisparr_api_key" value="${escapeHtml(settings.api_key || '')}">
                     <p class="setting-help">API key for Whisparr</p>
                 </div>
                 <!-- Removed the test connection button -->
