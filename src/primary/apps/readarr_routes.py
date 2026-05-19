@@ -45,11 +45,12 @@ def test_connection():
             response_data = response.json()
             
             # Save the API keys only if connection test is successful
-            settings_manager.save_setting("readarr", "api_url", api_url)
-            settings_manager.save_setting("readarr", "api_key", api_key)
-            # Also save the timeout if provided
+            current_settings = settings_manager.load_settings("readarr")
+            current_settings["api_url"] = api_url
+            current_settings["api_key"] = api_key
             if 'api_timeout' in data:
-                settings_manager.save_setting("readarr", "api_timeout", api_timeout)
+                current_settings["api_timeout"] = api_timeout
+            settings_manager.save_settings("readarr", current_settings)
             
             with open(LOG_FILE, 'a') as f:
                 f.write(f"{timestamp} - readarr - INFO - Connection test successful: {api_url}\n")

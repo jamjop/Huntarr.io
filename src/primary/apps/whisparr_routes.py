@@ -2,7 +2,7 @@
 
 from flask import Blueprint, request, jsonify
 import datetime, os, requests
-from src.primary import keys_manager
+from src.primary import settings_manager
 from src.primary.state import get_state_file_path
 from src.primary.apps.whisparr.api import check_connection
 
@@ -32,7 +32,10 @@ def test_connection():
         response.raise_for_status()
 
         # Save keys if connection is successful
-        keys_manager.save_api_keys("whisparr", api_url, api_key)
+        current_settings = settings_manager.load_settings("whisparr")
+        current_settings["api_url"] = api_url
+        current_settings["api_key"] = api_key
+        settings_manager.save_settings("whisparr", current_settings)
 
         # Ensure the response is valid JSON
         try:
@@ -63,13 +66,13 @@ def test_connection():
 # Function to check if Whisparr is configured
 def is_configured():
     """Check if Whisparr API credentials are configured"""
-    api_keys = keys_manager.load_api_keys("whisparr")
+    api_keys = settings_manager.load_settings("whisparr")
     return api_keys.get("api_url") and api_keys.get("api_key")
 
 @whisparr_bp.route('/get-versions', methods=['GET'])
 def get_versions():
     """Get the version information from the Whisparr API"""
-    api_keys = keys_manager.load_api_keys("whisparr")
+    api_keys = settings_manager.load_settings("whisparr")
     api_url = api_keys.get("api_url")
     api_key = api_keys.get("api_key")
 

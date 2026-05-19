@@ -2,7 +2,7 @@
 
 from flask import Blueprint, request, jsonify
 import datetime, os, requests
-from src.primary import keys_manager
+from src.primary import settings_manager
 from src.primary.state import get_state_file_path
 
 sonarr_bp = Blueprint('sonarr', __name__)
@@ -31,7 +31,10 @@ def test_connection():
         response.raise_for_status()
 
         # Save keys if connection is successful
-        keys_manager.save_api_keys("sonarr", api_url, api_key)
+        current_settings = settings_manager.load_settings("sonarr")
+        current_settings["api_url"] = api_url
+        current_settings["api_key"] = api_key
+        settings_manager.save_settings("sonarr", current_settings)
 
         # Ensure the response is valid JSON
         try:
