@@ -20,6 +20,9 @@ settings_logger = logging.getLogger("settings_manager")
 SETTINGS_DIR = pathlib.Path("/config")
 SETTINGS_DIR.mkdir(parents=True, exist_ok=True)
 
+# Cache: {app_name: (mtime, settings_dict)}
+_settings_cache: Dict[str, tuple] = {}
+
 # Default configs location remains the same
 DEFAULT_CONFIGS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'default_configs'))
 
@@ -78,40 +81,50 @@ def load_settings(app_name: str) -> Dict[str, Any]:
     if app_name not in KNOWN_APP_TYPES:
         settings_logger.error(f"Attempted to load settings for unknown app type: {app_name}")
         return {}
-        
+
     _ensure_config_exists(app_name)
     settings_file = get_settings_file_path(app_name)
+
+    # Return cached settings if the file hasn't changed since last read
+    try:
+        mtime = settings_file.stat().st_mtime
+        cached = _settings_cache.get(app_name)
+        if cached and cached[0] == mtime:
+            return cached[1]
+    except OSError:
+        pass
+
     try:
         with open(settings_file, 'r') as f:
             # Load existing settings
             current_settings = json.load(f)
-            
+
             # Load defaults to check for missing keys
             default_settings = load_default_app_settings(app_name)
-            
+
             # Add missing keys from defaults without overwriting existing values
             updated = False
             for key, value in default_settings.items():
                 if key not in current_settings:
                     current_settings[key] = value
                     updated = True
-            
-            # If keys were added, save the updated file
+
+            # If keys were added, save the updated file (this also invalidates cache)
             if updated:
                 settings_logger.info(f"Added missing default keys to {app_name}.json")
-                save_settings(app_name, current_settings) # Use save_settings to handle writing
-                
+                save_settings(app_name, current_settings)
+
+            _settings_cache[app_name] = (settings_file.stat().st_mtime, current_settings)
             return current_settings
-            
+
     except json.JSONDecodeError:
         settings_logger.error(f"Error decoding JSON from {settings_file}. Restoring from default.")
-        # Attempt to restore from default
         default_settings = load_default_app_settings(app_name)
-        save_settings(app_name, default_settings) # Save the restored defaults
+        save_settings(app_name, default_settings)
         return default_settings
     except Exception as e:
         settings_logger.error(f"Error loading settings for {app_name} from {settings_file}: {e}")
-        return {} # Return empty dict on other errors
+        return {}
 
 
 def save_settings(app_name: str, settings_data: Dict[str, Any]) -> bool:
@@ -134,6 +147,7 @@ def save_settings(app_name: str, settings_data: Dict[str, Any]) -> bool:
         # Write the provided settings data directly
         with open(settings_file, 'w') as f:
             json.dump(settings_data, f, indent=2)
+        _settings_cache.pop(app_name, None)
         settings_logger.info(f"Settings saved successfully for {app_name} to {settings_file}")
         return True
     except Exception as e:

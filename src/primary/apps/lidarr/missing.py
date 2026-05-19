@@ -9,7 +9,7 @@ import random
 import datetime # Import datetime
 from typing import List, Dict, Any, Set, Callable
 from src.primary.utils.logger import get_logger
-from src.primary.state import load_processed_ids, save_processed_ids, get_state_file_path
+from src.primary.state import load_processed_ids, save_processed_ids, truncate_processed_list, get_state_file_path
 from src.primary.apps.lidarr import api as lidarr_api
 from src.primary.stats_manager import increment_stat  # Import the stats increment function
 
@@ -269,6 +269,7 @@ def process_missing_content(
     if processed_in_this_run:
         updated_processed_ids = processed_album_ids.union(processed_in_this_run)
         save_processed_ids(PROCESSED_MISSING_FILE, list(updated_processed_ids))
+        truncate_processed_list(PROCESSED_MISSING_FILE)
         lidarr_logger.info(f"Saved {len(processed_in_this_run)} newly processed missing album IDs for Lidarr. Total processed: {len(updated_processed_ids)}.")
     elif processed_any: 
         lidarr_logger.info("Attempted missing content processing, but no new items were marked as successfully processed.")

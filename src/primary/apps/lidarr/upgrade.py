@@ -9,7 +9,7 @@ import random
 import datetime
 from typing import List, Dict, Any, Set, Callable 
 from src.primary.utils.logger import get_logger
-from src.primary.state import load_processed_ids, save_processed_ids, get_state_file_path
+from src.primary.state import load_processed_ids, save_processed_ids, truncate_processed_list, get_state_file_path
 from src.primary.apps.lidarr import api as lidarr_api 
 from src.primary.apps.lidarr.missing import wait_for_command # Reuse wait function
 from src.primary.stats_manager import increment_stat  # Import the stats increment function
@@ -174,6 +174,7 @@ def process_cutoff_upgrades(
     if processed_in_this_run:
         updated_processed_ids = processed_upgrade_ids.union(processed_in_this_run)
         save_processed_ids(PROCESSED_UPGRADES_FILE, list(updated_processed_ids))
+        truncate_processed_list(PROCESSED_UPGRADES_FILE)
         lidarr_logger.info(f"Saved {len(processed_in_this_run)} newly processed upgrade album IDs for Lidarr. Total processed for upgrades: {len(updated_processed_ids)}.")
     elif processed_any:
         lidarr_logger.info("Attempted upgrade processing, but no new albums were marked as successfully processed.")

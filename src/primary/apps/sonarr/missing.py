@@ -9,7 +9,7 @@ from typing import List, Dict, Any, Set, Callable
 # Correct import path
 from src.primary.utils.logger import get_logger
 # Correct the import names
-from src.primary.state import load_processed_ids, save_processed_ids
+from src.primary.state import load_processed_ids, save_processed_ids, truncate_processed_list
 from src.primary.apps.sonarr import api as sonarr_api # Import the updated api module
 from src.primary.stats_manager import increment_stat
 
@@ -212,6 +212,7 @@ def process_missing_episodes(
         updated_processed_ids = processed_episode_ids.union(processed_in_this_run)
         # Use the correct function name
         save_processed_ids(PROCESSED_MISSING_FILE, list(updated_processed_ids))
+        truncate_processed_list(PROCESSED_MISSING_FILE)
         sonarr_logger.info(f"Saved {len(processed_in_this_run)} newly processed missing episode IDs for Sonarr. Total processed: {len(updated_processed_ids)}.")
     elif processed_any: # Check if we attempted processing but didn't succeed in saving any new IDs
         sonarr_logger.info("Attempted missing episode processing, but no new episodes were marked as successfully processed.")

@@ -134,16 +134,14 @@ def logs_stream():
             app.active_log_streams.pop(client, None)
             web_logger.debug(f"Removed stale log stream connection for client: {client}")
         
-        # Update this client's timestamp
+        # Reject before registering to avoid ghost entries in the dict
+        if len(app.active_log_streams) >= 10:
+            web_logger.warning(f"Too many log stream connections ({len(app.active_log_streams)}). Rejecting new connection from {client_id}")
+            return Response("data: Too many active connections. Please try again later.\n\n",
+                           mimetype='text/event-stream')
+
+        # Register this client
         app.active_log_streams[client_id] = current_time
-        
-        # If too many connections, return an error for new ones
-        if len(app.active_log_streams) > 10:  # Limit to 10 concurrent connections
-            oldest_client = min(app.active_log_streams.items(), key=lambda x: x[1])[0]
-            if client_id != oldest_client and len(app.active_log_streams) > 3:
-                web_logger.warning(f"Too many log stream connections ({len(app.active_log_streams)}). Rejecting new connection from {client_id}")
-                return Response("data: Too many active connections. Please try again later.\n\n", 
-                               mimetype='text/event-stream')
 
     def generate():
         """Generate log events for the SSE stream."""

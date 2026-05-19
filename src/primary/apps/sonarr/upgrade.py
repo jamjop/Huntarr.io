@@ -9,7 +9,7 @@ from typing import List, Dict, Any, Set, Callable # Added Callable
 # Correct import path
 from src.primary.utils.logger import get_logger
 # Correct the import names
-from src.primary.state import load_processed_ids, save_processed_ids
+from src.primary.state import load_processed_ids, save_processed_ids, truncate_processed_list
 from src.primary.apps.sonarr import api as sonarr_api # Import the updated api module
 from src.primary.apps.sonarr.missing import wait_for_command # Reuse wait function
 from src.primary.stats_manager import increment_stat
@@ -216,6 +216,7 @@ def process_cutoff_upgrades(
     if processed_in_this_run:
         updated_processed_ids = processed_upgrade_ids.union(processed_in_this_run)
         save_processed_ids(PROCESSED_UPGRADES_FILE, list(updated_processed_ids))
+        truncate_processed_list(PROCESSED_UPGRADES_FILE)
         sonarr_logger.info(f"Saved {len(processed_in_this_run)} newly processed upgrade episode IDs for Sonarr. Total processed for upgrades: {len(updated_processed_ids)}.")
     elif processed_any:
         sonarr_logger.info("Attempted upgrade processing, but no new episodes were marked as successfully processed.")
