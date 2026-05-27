@@ -46,7 +46,11 @@ def load_default_app_settings(app_name: str) -> Dict[str, Any]:
     default_file = get_default_config_path(app_name)
     if default_file.exists():
         try:
-            with open(default_file, 'r') as f:
+            base_real = os.path.realpath(DEFAULT_CONFIGS_DIR)
+            target_real = os.path.realpath(default_file)
+            if os.path.commonpath([base_real, target_real]) != base_real:
+                raise Exception("Invalid file path")
+            with open(target_real, 'r') as f:
                 return json.load(f)
         except Exception as e:
             settings_logger.error(f"Error loading default settings for {app_name} from {default_file}: {e}")
