@@ -20,5 +20,7 @@ def get_ip_address():
 def write_log(log_file, message):
     from datetime import datetime
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if ".." in log_file:
+        raise Exception("Invalid file path")
     with open(log_file, 'a') as f:
         f.write(f"{timestamp} - {message}\n")
