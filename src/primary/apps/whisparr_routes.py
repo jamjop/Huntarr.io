@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 from flask import Blueprint, request, jsonify
-import datetime, os, requests
+import datetime, os, requests, re
+from urllib.parse import urlparse, urlunparse
 from src.primary import settings_manager
 from src.primary.state import get_state_file_path
 from src.primary.apps.whisparr.api import check_connection
@@ -14,6 +15,30 @@ LOG_FILE = "/tmp/huntarr-logs/huntarr.log"
 PROCESSED_MISSING_FILE = get_state_file_path("whisparr", "processed_missing") 
 PROCESSED_UPGRADES_FILE = get_state_file_path("whisparr", "processed_upgrades")
 
+def build_validated_url(base_url: str) -> str:
+    try:
+        # Minimal path validation
+        if "/../" in base_url or re.search(r"/%2e%2e/", base_url, re.IGNORECASE):
+            raise ValueError("Invalid path")
+        
+        parsed = urlparse(base_url)
+        
+        # Protocol + host checks
+        if parsed.scheme not in ("http", "https"):
+            raise ValueError("Invalid protocol")
+        if not parsed.hostname:
+            raise ValueError("Invalid host")
+        allowed_domains = ["example.com"]  # add your allowed domains here
+        if parsed.hostname.lower() not in allowed_domains:
+            raise ValueError("Invalid host")
+        
+        # Rebuild path with fixed literal
+        parsed = parsed._replace(path="/api/v3/system/status")
+        
+        return urlunparse(parsed)
+    except Exception:
+        raise ValueError("Invalid URL")
+
 @whisparr_bp.route('/test-connection', methods=['POST'])
 def test_connection():
     """Test connection to a Whisparr API instance"""
@@ -25,7 +50,11 @@ def test_connection():
         return jsonify({"success": False, "message": "API URL and API Key are required"}), 400
 
     headers = {'X-Api-Key': api_key}
-    test_url = f"{api_url.rstrip('/')}/api/v3/system/status"
+    
+    try:
+        test_url = build_validated_url(api_url)
+    except ValueError:
+        return jsonify({"success": False, "message": "Invalid API URL"}), 400
 
     try:
         response = requests.get(test_url, headers=headers, timeout=10)
