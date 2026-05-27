@@ -65,7 +65,11 @@ def get_last_reset_time(app_type: str = None) -> datetime.datetime:
     
     try:
         if os.path.exists(reset_file):
-            with open(reset_file, "r") as f:
+            base_real = os.path.realpath("/tmp/huntarr-state")
+            target_real = os.path.realpath(reset_file)
+            if os.path.commonpath([base_real, target_real]) != base_real:
+                raise Exception("Invalid file path")
+            with open(target_real, "r") as f:
                 reset_time_str = f.read().strip()
                 return datetime.datetime.fromisoformat(reset_time_str)
     except Exception as e:
@@ -209,6 +213,8 @@ def load_processed_ids(filepath: str) -> List[int]:
         A list of processed IDs
     """
     try:
+        if ".." in filepath:
+            raise Exception("Invalid file path")
         if os.path.exists(filepath):
             with open(filepath, "r") as f:
                 return json.load(f)
@@ -226,6 +232,8 @@ def save_processed_ids(filepath: str, ids: List[int]) -> None:
         ids: The list of IDs to save
     """
     try:
+        if ".." in filepath:
+            raise Exception("Invalid file path")
         with open(filepath, "w") as f:
             json.dump(ids, f)
     except Exception as e:
