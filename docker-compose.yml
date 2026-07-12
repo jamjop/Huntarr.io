@@ -4,14 +4,26 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: huntarr
+    mem_limit: 128m
+    security_opt:
+      - no-new-privileges:true
     ports:
       - "9705:9705"
     volumes:
       - huntarr-config:/config
     environment:
-      - TZ=America/New_York
+      - TZ=America/Chicago
     restart: unless-stopped
+    networks:
+      - media-network
+    labels:
+      - "wud.watch=false"
+      #- "wud.watch.digest=true"
+      #- "wud.tag.include=^\\d+\\.\\d+\\.\\d+$$"
 
+networks:
+  media-network:
+    external: true
 volumes:
   huntarr-config:
     name: huntarr-config

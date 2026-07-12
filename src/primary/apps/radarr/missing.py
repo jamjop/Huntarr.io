@@ -89,13 +89,21 @@ def process_missing_movies(
     if skip_future_releases:
         now = datetime.datetime.now(datetime.timezone.utc)
         original_count = len(missing_movies)
-        # Radarr movie object has 'inCinemas', 'physicalRelease' dates
-        # Using 'physicalRelease' as the primary check, falling back if needed
-        missing_movies = [
-            movie for movie in missing_movies
-            if movie.get('physicalRelease') and datetime.datetime.fromisoformat(movie['physicalRelease'].replace('Z', '+00:00')) < now
-            # Add fallback or alternative logic if physicalRelease isn't always present
-        ]
+
+        def _is_released(movie: Dict[str, Any]) -> bool:
+            # physicalRelease is frequently null for streaming-only/older titles;
+            # fall back through digital/cinema dates so those aren't skipped forever.
+            dates = []
+            for field in ('physicalRelease', 'digitalRelease', 'inCinemas'):
+                value = movie.get(field)
+                if value:
+                    try:
+                        dates.append(datetime.datetime.fromisoformat(value.replace('Z', '+00:00')))
+                    except ValueError:
+                        pass
+            return not dates or any(d < now for d in dates)
+
+        missing_movies = [movie for movie in missing_movies if _is_released(movie)]
         skipped_count = original_count - len(missing_movies)
         if skipped_count > 0:
             logger.info(f"Skipped {skipped_count} future movie releases based on physical release date.")
