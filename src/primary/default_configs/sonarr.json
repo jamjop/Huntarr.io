@@ -9,6 +9,7 @@
   "skip_future_episodes": true,
   "skip_series_refresh": true,
   "random_missing": true,
+  "prioritize_recent": false,
   "random_upgrades": true,
   "debug_mode": false,
   "api_timeout": 120,

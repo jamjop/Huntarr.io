@@ -96,6 +96,14 @@ const SettingsForms = {
                     <p class="setting-help">Select random missing items instead of sequential order</p>
                 </div>
                 <div class="setting-item">
+                    <label for="sonarr_prioritize_recent">Prioritize Recently Added:</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="sonarr_prioritize_recent" ${settings.prioritize_recent === true ? 'checked' : ''}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <p class="setting-help">Search missing episodes from the most recently added series first, newest to oldest. Takes precedence over Random Missing when enabled.</p>
+                </div>
+                <div class="setting-item">
                     <label for="random_upgrades">Random Upgrades:</label>
                     <label class="toggle-switch">
                         <input type="checkbox" id="random_upgrades" ${settings.random_upgrades !== false ? 'checked' : ''}>
@@ -221,6 +229,14 @@ const SettingsForms = {
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Select random missing items instead of sequential order</p>
+                </div>
+                <div class="setting-item">
+                    <label for="radarr_prioritize_recent">Prioritize Recently Added:</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="radarr_prioritize_recent" ${settings.prioritize_recent === true ? 'checked' : ''}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <p class="setting-help">Search recently added missing movies first, newest to oldest. Takes precedence over Random Missing when enabled.</p>
                 </div>
                 <div class="setting-item">
                     <label for="radarr_random_upgrades">Random Upgrades:</label>

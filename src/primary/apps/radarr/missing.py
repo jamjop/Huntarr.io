@@ -39,6 +39,7 @@ def process_missing_movies(
     api_timeout = app_settings.get("api_timeout", 60)
     hunt_missing_movies = app_settings.get("hunt_missing_movies", 1)
     random_missing = app_settings.get("random_missing", True)
+    prioritize_recent = app_settings.get("prioritize_recent", False)
     skip_movie_refresh = app_settings.get("skip_movie_refresh", False)
     monitored_only = app_settings.get("monitored_only", True) # Keep monitored_only logic if needed by API call
     skip_future_releases = app_settings.get("skip_future_releases", True)
@@ -126,7 +127,14 @@ def process_missing_movies(
     logger.info(f"Found {len(unprocessed_movies)} missing movies that haven't been processed yet.")
     
     # Select movies to search based on configuration
-    if random_missing:
+    if prioritize_recent:
+        logger.info(f"Prioritizing the {hunt_missing_movies} most recently added missing movies.")
+        # 'added' is an ISO 8601 string (e.g. from Seerr adding the movie at request
+        # time); lexicographic sort works fine for that format. Missing/blank 'added'
+        # values sort to the back rather than crashing the comparison.
+        unprocessed_movies.sort(key=lambda x: x.get("added") or "", reverse=True)
+        movies_to_search = unprocessed_movies[:hunt_missing_movies]
+    elif random_missing:
         logger.info(f"Randomly selecting up to {hunt_missing_movies} missing movies.")
         movies_to_search = random.sample(unprocessed_movies, min(len(unprocessed_movies), hunt_missing_movies))
     else:

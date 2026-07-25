@@ -44,6 +44,7 @@ def process_missing_episodes(
     skip_future_episodes = app_settings.get("skip_future_episodes", True)
     skip_series_refresh = app_settings.get("skip_series_refresh", False)
     random_missing = app_settings.get("random_missing", False)
+    prioritize_recent = app_settings.get("prioritize_recent", False)
     hunt_missing_shows = app_settings.get("hunt_missing_shows", 0)
     command_wait_delay = app_settings.get("command_wait_delay", 5)
     command_wait_attempts = app_settings.get("command_wait_attempts", 12)
@@ -65,15 +66,46 @@ def process_missing_episodes(
     # Use different methods based on random setting
     episodes_to_search = []
     
-    if random_missing:
+    if prioritize_recent:
+        # Prioritize episodes belonging to the most recently added series (a strong
+        # proxy for "recently requested" since Seerr adds the series to Sonarr at
+        # request time). Needs the full missing list to sort, so this uses the same
+        # sequential fetch as the non-random path rather than the random-page method.
+        sonarr_logger.info("Prioritizing missing episodes from the most recently added series")
+        missing_episodes = sonarr_api.get_missing_episodes(api_url, api_key, api_timeout, monitored_only)
+        sonarr_logger.info(f"Received {len(missing_episodes)} missing episodes from Sonarr API (before filtering).")
+
+        if not missing_episodes:
+            sonarr_logger.info("No missing episodes found in Sonarr.")
+            return False
+
+        episodes_to_process = [ep for ep in missing_episodes if ep['id'] not in processed_episode_ids]
+        sonarr_logger.info(f"Found {len(episodes_to_process)} new missing episodes to process.")
+
+        if skip_future_episodes:
+            now_unix = time.time()
+            original_count = len(episodes_to_process)
+            episodes_to_process = [
+                ep for ep in episodes_to_process
+                if ep.get('airDateUtc') and time.mktime(time.strptime(ep['airDateUtc'], '%Y-%m-%dT%H:%M:%SZ')) < now_unix
+            ]
+            skipped_count = original_count - len(episodes_to_process)
+            if skipped_count > 0:
+                sonarr_logger.info(f"Skipped {skipped_count} future episodes based on air date.")
+
+        # series.added is an ISO 8601 string; lexicographic sort works fine for that
+        # format. Missing/blank values sort to the back rather than crashing the sort.
+        episodes_to_process.sort(key=lambda ep: (ep.get('series') or {}).get('added') or "", reverse=True)
+        episodes_to_search = episodes_to_process[:hunt_missing_shows]
+    elif random_missing:
         # Use the efficient random page selection method
         sonarr_logger.info(f"Using random selection for missing episodes")
         episodes_to_search = sonarr_api.get_missing_episodes_random_page(
             api_url, api_key, api_timeout, monitored_only, hunt_missing_shows)
-            
+
         # Filter out already processed episodes
         episodes_to_search = [ep for ep in episodes_to_search if ep['id'] not in processed_episode_ids]
-        
+
         # If we didn't get enough episodes, we might need to try another approach
         if len(episodes_to_search) < hunt_missing_shows and len(episodes_to_search) > 0:
             sonarr_logger.debug(f"Got {len(episodes_to_search)} episodes from random page, fewer than requested {hunt_missing_shows}")
