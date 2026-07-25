@@ -4,6 +4,7 @@ Sonarr missing episodes processing module for Huntarr
 """
 
 import time
+import datetime
 import random
 from typing import List, Dict, Any, Set, Callable
 # Correct import path
@@ -45,6 +46,7 @@ def process_missing_episodes(
     skip_series_refresh = app_settings.get("skip_series_refresh", False)
     random_missing = app_settings.get("random_missing", False)
     prioritize_recent = app_settings.get("prioritize_recent", False)
+    recent_retry_hours = app_settings.get("recent_retry_hours", 48)
     hunt_missing_shows = app_settings.get("hunt_missing_shows", 0)
     command_wait_delay = app_settings.get("command_wait_delay", 5)
     command_wait_attempts = app_settings.get("command_wait_attempts", 12)
@@ -79,7 +81,30 @@ def process_missing_episodes(
             sonarr_logger.info("No missing episodes found in Sonarr.")
             return False
 
-        episodes_to_process = [ep for ep in missing_episodes if ep['id'] not in processed_episode_ids]
+        # Normally a processed episode ID is skipped until the weekly state reset --
+        # but a prior search may have grabbed a release that then failed to
+        # download, so episodes from a recently-added series stay eligible for
+        # retry every cycle (regardless of processed status) until they age out
+        # of the retry window or actually get downloaded.
+        if recent_retry_hours > 0:
+            retry_cutoff_unix = time.time() - (recent_retry_hours * 3600)
+
+            def _within_retry_window(ep: Dict[str, Any]) -> bool:
+                added = (ep.get('series') or {}).get('added')
+                if not added:
+                    return False
+                try:
+                    added_dt = datetime.datetime.fromisoformat(added.replace('Z', '+00:00'))
+                except ValueError:
+                    return False
+                return added_dt.timestamp() >= retry_cutoff_unix
+
+            episodes_to_process = [
+                ep for ep in missing_episodes
+                if ep['id'] not in processed_episode_ids or _within_retry_window(ep)
+            ]
+        else:
+            episodes_to_process = [ep for ep in missing_episodes if ep['id'] not in processed_episode_ids]
         sonarr_logger.info(f"Found {len(episodes_to_process)} new missing episodes to process.")
 
         if skip_future_episodes:

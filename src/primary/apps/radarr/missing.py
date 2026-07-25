@@ -40,6 +40,7 @@ def process_missing_movies(
     hunt_missing_movies = app_settings.get("hunt_missing_movies", 1)
     random_missing = app_settings.get("random_missing", True)
     prioritize_recent = app_settings.get("prioritize_recent", False)
+    recent_retry_hours = app_settings.get("recent_retry_hours", 48)
     skip_movie_refresh = app_settings.get("skip_movie_refresh", False)
     monitored_only = app_settings.get("monitored_only", True) # Keep monitored_only logic if needed by API call
     skip_future_releases = app_settings.get("skip_future_releases", True)
@@ -117,8 +118,32 @@ def process_missing_movies(
     movies_processed = 0
     processing_done = False
     
-    # Filter out already processed movies
-    unprocessed_movies = [movie for movie in missing_movies if movie.get("id") not in processed_missing_ids]
+    # Filter out already processed movies. Normally once huntarr has triggered a
+    # search for a movie it won't retry until the weekly state reset -- but a
+    # prior search may have grabbed a release that then failed to download, so
+    # when prioritize_recent is on, recently-added movies stay eligible for retry
+    # every cycle (regardless of processed status) until they age out of the
+    # retry window or actually get a file.
+    if prioritize_recent and recent_retry_hours > 0:
+        now = datetime.datetime.now(datetime.timezone.utc)
+        retry_cutoff = now - datetime.timedelta(hours=recent_retry_hours)
+
+        def _within_retry_window(movie: Dict[str, Any]) -> bool:
+            added = movie.get("added")
+            if not added:
+                return False
+            try:
+                added_dt = datetime.datetime.fromisoformat(added.replace('Z', '+00:00'))
+            except ValueError:
+                return False
+            return added_dt >= retry_cutoff
+
+        unprocessed_movies = [
+            movie for movie in missing_movies
+            if movie.get("id") not in processed_missing_ids or _within_retry_window(movie)
+        ]
+    else:
+        unprocessed_movies = [movie for movie in missing_movies if movie.get("id") not in processed_missing_ids]
     
     if not unprocessed_movies:
         logger.info("All available missing movies have already been processed. Skipping.")

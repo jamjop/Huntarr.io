@@ -10,6 +10,7 @@
   "skip_series_refresh": true,
   "random_missing": true,
   "prioritize_recent": false,
+  "recent_retry_hours": 48,
   "random_upgrades": true,
   "debug_mode": false,
   "api_timeout": 120,

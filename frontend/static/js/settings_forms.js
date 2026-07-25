@@ -104,6 +104,11 @@ const SettingsForms = {
                     <p class="setting-help">Search missing episodes from the most recently added series first, newest to oldest. Takes precedence over Random Missing when enabled.</p>
                 </div>
                 <div class="setting-item">
+                    <label for="sonarr_recent_retry_hours">Recent Retry Window (hours):</label>
+                    <input type="number" id="sonarr_recent_retry_hours" min="0" value="${settings.recent_retry_hours ?? 48}">
+                    <p class="setting-help">While Prioritize Recently Added is on, keep retrying episodes from series added within this many hours every cycle, even if already searched before (in case a prior download failed). Set to 0 to disable retries and only search each item once.</p>
+                </div>
+                <div class="setting-item">
                     <label for="random_upgrades">Random Upgrades:</label>
                     <label class="toggle-switch">
                         <input type="checkbox" id="random_upgrades" ${settings.random_upgrades !== false ? 'checked' : ''}>
@@ -237,6 +242,11 @@ const SettingsForms = {
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Search recently added missing movies first, newest to oldest. Takes precedence over Random Missing when enabled.</p>
+                </div>
+                <div class="setting-item">
+                    <label for="radarr_recent_retry_hours">Recent Retry Window (hours):</label>
+                    <input type="number" id="radarr_recent_retry_hours" min="0" value="${settings.recent_retry_hours ?? 48}">
+                    <p class="setting-help">While Prioritize Recently Added is on, keep retrying movies added within this many hours every cycle, even if already searched before (in case a prior download failed). Set to 0 to disable retries and only search each item once.</p>
                 </div>
                 <div class="setting-item">
                     <label for="radarr_random_upgrades">Random Upgrades:</label>
