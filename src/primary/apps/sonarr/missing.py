@@ -10,15 +10,12 @@ from typing import List, Dict, Any, Set, Callable
 # Correct import path
 from src.primary.utils.logger import get_logger
 # Correct the import names
-from src.primary.state import load_processed_ids, save_processed_ids, truncate_processed_list
+from src.primary.state import load_processed_ids, save_processed_ids, truncate_processed_list, get_state_file_path
 from src.primary.apps.sonarr import api as sonarr_api # Import the updated api module
 from src.primary.stats_manager import increment_stat
 
 # Get logger for the Sonarr app
 sonarr_logger = get_logger("sonarr")
-
-# State file for processed missing episodes
-PROCESSED_MISSING_FILE = "processed_missing_sonarr.json"
 
 def process_missing_episodes(
     app_settings: Dict[str, Any],
@@ -60,6 +57,17 @@ def process_missing_episodes(
         return False
     
     sonarr_logger.info(f"Checking for {hunt_missing_shows} missing items...")
+
+    # Get app-specific state file -- must go through get_state_file_path() like
+    # every other app (radarr/lidarr/readarr/whisparr) so it lives under
+    # /tmp/huntarr-state/sonarr/ and actually gets cleared by the periodic
+    # state_reset_interval_hours logic in state.py's clear_processed_ids(). The
+    # previous bare-relative-filename form resolved to
+    # /app/processed_missing_sonarr.json -- a container-writable-layer file the
+    # reset logic never touched, so it grew forever and permanently blocked new
+    # searches once every current missing episode had been added to it
+    # (confirmed root cause of a 3+ day full stall, 2026-08-08).
+    PROCESSED_MISSING_FILE = get_state_file_path("sonarr", "processed_missing")
 
     # Load already processed episode IDs for Sonarr
     processed_episode_ids: Set[int] = set(load_processed_ids(PROCESSED_MISSING_FILE))

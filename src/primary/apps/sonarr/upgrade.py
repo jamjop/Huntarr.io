@@ -9,16 +9,13 @@ from typing import List, Dict, Any, Set, Callable # Added Callable
 # Correct import path
 from src.primary.utils.logger import get_logger
 # Correct the import names
-from src.primary.state import load_processed_ids, save_processed_ids, truncate_processed_list
+from src.primary.state import load_processed_ids, save_processed_ids, truncate_processed_list, get_state_file_path
 from src.primary.apps.sonarr import api as sonarr_api # Import the updated api module
 from src.primary.apps.sonarr.missing import wait_for_command # Reuse wait function
 from src.primary.stats_manager import increment_stat
 
 # Get logger for the Sonarr app
 sonarr_logger = get_logger("sonarr")
-
-# State file for processed upgrades
-PROCESSED_UPGRADES_FILE = "processed_upgrades_sonarr.json"
 
 def process_cutoff_upgrades(
     app_settings: Dict[str, Any],
@@ -52,6 +49,10 @@ def process_cutoff_upgrades(
         return False
         
     sonarr_logger.info(f"Checking for {hunt_upgrade_episodes} quality upgrades...")
+
+    # Get app-specific state file -- see missing.py for why this must go
+    # through get_state_file_path() rather than a bare relative filename.
+    PROCESSED_UPGRADES_FILE = get_state_file_path("sonarr", "processed_upgrades")
 
     # Load already processed episode IDs for upgrades
     processed_upgrade_ids: Set[int] = set(load_processed_ids(PROCESSED_UPGRADES_FILE))
